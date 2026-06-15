@@ -22,23 +22,22 @@ jobs:
         distribution: 'temurin'
         cache: 'gradle'
 
-    - name: Grant execute permission to gradlew
-      run: chmod +x gradlew
-
     - name: Upgrade Gradle Wrapper to 8.7
       run: |
         CURRENT=$(grep distributionUrl gradle/wrapper/gradle-wrapper.properties | grep -oP '\d+\.\d+(\.\d+)?(?=-)')
         echo "Gradle atual: $CURRENT"
-        ./gradlew wrapper --gradle-version=8.7 --distribution-type=bin
-        ./gradlew wrapper --gradle-version=8.7 --distribution-type=bin  # 2x para garantir que o wrapper se auto-atualiza
+        sed -i "s|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.7-bin.zip|g" gradle/wrapper/gradle-wrapper.properties
+        echo "Atualizado para:"
+        grep distributionUrl gradle/wrapper/gradle-wrapper.properties
 
     - name: Upgrade AGP in build.gradle (if needed)
       run: |
-        # Atualiza o Android Gradle Plugin para versão compatível com Gradle 8.7
         sed -i "s/com\.android\.tools\.build:gradle:[0-9.]*/com.android.tools.build:gradle:8.4.0/g" build.gradle 2>/dev/null || true
         sed -i "s/com\.android\.tools\.build:gradle:[0-9.]*/com.android.tools.build:gradle:8.4.0/g" build.gradle.kts 2>/dev/null || true
-        # Se usar version catalog (libs.versions.toml)
         sed -i "s/agp\s*=\s*\"[0-9.]*\"/agp = \"8.4.0\"/g" gradle/libs.versions.toml 2>/dev/null || true
+
+    - name: Grant execute permission to gradlew
+      run: chmod +x gradlew
 
     - name: Build with Gradle
       run: ./gradlew assembleDebug
